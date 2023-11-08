@@ -1,0 +1,5 @@
+FROM bellsoft/bellsoft/liberica-openjdk-alpine:17.0.7
+COPY ./ru ./src
+RUN mkdir ./out
+RUN javac -sourcepath ./src -d ./out src/ru/geekbrains/jc/hw/first/MainApp
+CMD java -classpath ./out ru.geekbrains.jc.hw.first.MainApp
