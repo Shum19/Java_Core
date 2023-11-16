@@ -114,7 +114,7 @@ public class TicTacToe {
      */
     private static void aiTurn(){
         int x, y;
-        if (nextCell(aiX, aiY)){
+        if (nextCell(aiX, aiY) && fieldSizeX > 3){
             x = aiX;
             y = aiY;
         }else {
@@ -234,10 +234,7 @@ public class TicTacToe {
         if (checkVertical(x, y)){
             return true;
         }
-        if (checkDiagonal(x, y)){
-            System.out.println("Done");
-            return true;
-        }
+
         return false;
     }
     private static boolean checkHorizontal(int x, int y){
@@ -247,6 +244,8 @@ public class TicTacToe {
         int leftDiffer = 0;
         int rightLimit = fieldSizeY - 1;
         int leftLimit = 0;
+        int leftEmpty = 0;
+        int rightEmpty = 0;
         if (y <= rightLimit - (WIN_COUNT - 2)){
             rightLimit = y + (WIN_COUNT - 2);
         }
@@ -259,9 +258,11 @@ public class TicTacToe {
                 rightCount++;
             }
             if (isEmpty(x, col)){
+                rightEmpty++;
                 rightDiffer = col;
+            }if (field[x][col] == AI_DOT){
+                rightCount--;
             }
-
         }
 
         for (int col = leftLimit; col <= y ; col++) {
@@ -270,20 +271,31 @@ public class TicTacToe {
             }
             if (isEmpty(x, col)){
                 leftDiffer = col;
+                leftEmpty++;
+            } if (field[x][col] == AI_DOT){
+                leftCount--;
             }
 
-        } if (leftCount >= WIN_COUNT - 2 || rightCount >= WIN_COUNT - 2) {
-            if (rightDiffer - y == 1 | rightCount == WIN_COUNT - 2) {
+        }
+        if (leftCount >= WIN_COUNT - 2 || rightCount >= WIN_COUNT - 2) {
+/**
+ * Сложное условие из нескольких комбинация так как игровое поле может быть большим то необходимо смотреть на два шага
+ * вперед. Условие проверяет в какую сторону идти влево или вправо. Сначала проверяем что разница до пустого поля одна
+ * единица и что есть два или менее пустых поля, далее проверяется условие количество пустых полей с одной стороны и
+ * с другой и потом еще раз проверяем разницу пустого поля от поля куда только что поставили фишку. Данные условия
+ * выбирают необходимое на правление для выбора компьютером фишки по горизонтали
+ */
+            if (rightDiffer - y == 1  && rightEmpty <= 2 || rightEmpty > leftEmpty || rightDiffer - y == 1) {
                 for (int column = y; column < fieldSizeY; column++) {
-                    if (isEmpty(x, column)) {
+                    if (isEmpty(x, column) ) {
                         aiX = x;
                         aiY = column;
                         return true;
                     }
                 }
-            } else if (y - leftDiffer == 1 | leftCount == WIN_COUNT - 2) {
-                for (int column = y; column >= 0; column--) {
-                    if (isEmpty(x, column)) {
+            } else if (y - leftDiffer == 1 && leftEmpty <= 2 || leftEmpty > rightEmpty || y - leftDiffer == 1) {
+                for (int column = y; column >= leftLimit; column--) {
+                    if (isEmpty(x, column) ) {
                         aiX = x;
                         aiY = column;
                         return true;
@@ -294,67 +306,59 @@ public class TicTacToe {
         return false;
     }
     private static boolean checkVertical(int x, int y){
-        int winCount = 0;
-        for (int row = 0; row < fieldSizeX; row++) {
-                if (field[row][y] == HUMAN_DOT){
-                    winCount++;
+        int upCount = 0;
+        int downCount = 0;
+        int upDiffer = 0;
+        int downDiffer = 0;
+        int upLimit = 0;
+        int downLimit = fieldSizeX - 1;
+        int upEmpty = 0;
+        int downEmpty = 0;
+        if (x <= downLimit - (WIN_COUNT - 2)) {
+            downLimit = x + (WIN_COUNT - 2);
+        }
+        if ( x >= WIN_COUNT - 2) {
+            upLimit = x - (WIN_COUNT - 2);
+        }
+        for (int row = downLimit; row >= x; row--) {
+            if (field[row][y] == HUMAN_DOT){downCount++;}
+            if (isEmpty(row, y)){
+                downEmpty++;
+                downDiffer = row;
+            }
+            if (field[row][y] == AI_DOT){downCount--;}
+        }
+        for (int row = upLimit; row <= x ; row++) {
+            if(field[row][y] == HUMAN_DOT ){upCount++;}
+            if (field[row][y] == AI_DOT){upCount--;}
+            if (isEmpty(row, y)){
+                upEmpty++;
+                upDiffer = row;
+            }
+        }
+        if (downCount >= WIN_COUNT - 2 || upCount >= WIN_COUNT - 2){
+            if (downDiffer - x == 1 && downEmpty <= 2 || downEmpty > upEmpty || downDiffer - 1 == 1){
+                for (int row = x; row < downLimit ; row++) {
+                    if (isEmpty(row, y)){
+                        aiX = row;
+                        aiY = y;
+                        return true;
+                    }
                 }
-                if (winCount == WIN_COUNT - 1) {
-                    if (x < WIN_COUNT - 1) {
-                        for (int aisle = x; aisle < fieldSizeX; aisle++) {
-                            if (isEmpty(aisle, y)) {
-                                aiX = aisle;
-                                aiY = y;
-                                return true;
-                            }
-                        }
+            }else if (upDiffer - 1 == 1 && upEmpty <= 2 || upEmpty > downEmpty || upDiffer - 1 == 1){
+                for (int row = x; row >= upLimit; row--) {
+                    if (isEmpty(row, y)){
+                        aiX = row;
+                        aiY = y;
+                        return true;
                     }
-                    for (int aisle = x; aisle >= 0; aisle--) {
-                        if (isEmpty(aisle, y)) {
-                            aiX = aisle;
-                            aiY = y;
-                            return true;
-                        }
-                    }
+
                 }
             }
-            return false;
-    }
-    private static boolean checkDiagonal(int x, int y){
-        int winCount = 0;
-        int col = fieldSizeY - 1;
-        for (int row = 0; row < fieldSizeX; row++) {
-            if(field[row][row] == HUMAN_DOT) {
-                winCount++;
-                if (winCount == WIN_COUNT - 1) {
-                    for (int aisle = 0; aisle < fieldSizeX; aisle++) {
-                        if (isEmpty(aisle, aisle)) {
-                            aiX = aisle;
-                            aiY = aisle;
-                            return true;
-                        }
-                    }
-                }
-            }else winCount = 0;
-        }
-        for (int row = 0; row < fieldSizeX; row++) {
-            if (field[row][col] == HUMAN_DOT){
-                winCount++;
-                if (winCount == WIN_COUNT - 1){
-                    for (int aisle = 0; aisle < fieldSizeX; aisle++) {
-                        if(isEmpty(aisle, col)){
-                            aiX = aisle;
-                            aiY = col;
-                            return true;
-                        }
-                        col--;
-                    }
-                }
-            }else winCount = 0;
-            col--;
         }
         return false;
     }
+
 
 
 }//final line
